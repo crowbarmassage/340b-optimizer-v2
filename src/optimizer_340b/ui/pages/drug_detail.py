@@ -158,6 +158,10 @@ def _get_or_search_drug() -> Drug | None:
             with col2:
                 if st.button("Search New Drug", type="secondary"):
                     st.session_state.selected_drug = None
+                    # Clear search component state so it doesn't re-select the old drug
+                    for key in ["detail_selected_ndc", "detail_hcpcs_results",
+                                "detail_name_results", "detail_query"]:
+                        st.session_state.pop(key, None)
                     st.rerun()
             return drug
 
@@ -170,7 +174,10 @@ def _get_or_search_drug() -> Drug | None:
     search_result = render_drug_search(key_prefix="detail")
 
     if search_result:
-        # search_result is always an NDC (component handles name/HCPCS selection)
+        # Filter hints (e.g. "name:humira", "hcpcs:J0135") mean the user
+        # is still picking from a multi-match list — don't treat as NDC
+        if search_result.startswith("name:") or search_result.startswith("hcpcs:"):
+            return None
         drug = _lookup_drug_by_ndc(search_result)
         if drug:
             st.session_state.selected_drug = drug.ndc
