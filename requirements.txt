@@ -1,0 +1,18 @@
+# 340B Optimizer - Requirements
+# Generated from pyproject.toml
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+streamlit>=1.30.0
+polars>=0.20.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+plotly>=5.18.0
+python-dotenv>=1.0.0
+orjson>=3.9.0
+pydantic>=2.5.0
+thefuzz>=0.22.0
+python-Levenshtein>=0.23.0
+
+# Development dependencies (install with: pip install -r requirements.txt -r requirements-dev.txt)
+# Or use: pip install -e ".[dev]"

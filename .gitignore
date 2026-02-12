@@ -1,0 +1,46 @@
+# Environment
+.env
+.env.*
+!.env.example
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+tests/test_outputs/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files (uploaded at runtime, not committed)
+data/uploads/
+*.xlsx
+*.csv
+# Allow all sample data files for deployment
+!data/sample/*.csv
+!data/sample/*.xlsx
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Database
+*.db
+*.sqlite
