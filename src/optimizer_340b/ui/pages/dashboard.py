@@ -267,7 +267,12 @@ def _build_hcpcs_lookup(
 
         if ndc and hcpcs:
             asp = asp_lookup.get(hcpcs)
-            bill_units = row.get("Billing Units Per Package", 1) or 1
+            bill_units = (
+                row.get("Bill Units Per Pkg")
+                or row.get("BILLUNITSPKG")
+                or row.get("Billing Units Per Package")
+                or 1
+            )
 
             lookup[ndc] = {
                 "hcpcs_code": hcpcs,
@@ -439,6 +444,10 @@ def _row_to_drug(
     # Brand/Specialty use 85% AWP, Generic uses 20% AWP
     is_brand = drug_category != DrugCategory.GENERIC
 
+    # Detect Off-Contract drugs
+    contract_name = str(row.get("Contract Name", "")).strip()
+    off_contract = contract_name == "Off-Contract"
+
     return Drug(
         ndc=ndc,
         drug_name=str(drug_name),
@@ -451,6 +460,7 @@ def _row_to_drug(
         is_brand=is_brand,
         ira_flag=bool(ira_flag),
         penny_pricing_flag=bool(penny_pricing),
+        off_contract=off_contract,
         nadac_price=nadac_price,
     )
 
@@ -615,6 +625,8 @@ def _render_opportunity_table(analyses: list[MarginAnalysis]) -> None:
             flags.append("\u26a0\ufe0f IRA")
         if drug.penny_pricing_flag:
             flags.append("\U0001f4b0 Penny")
+        if drug.off_contract:
+            flags.append("\u26a0\ufe0f Off-Contract")
         risk_text = " | ".join(flags) if flags else ""
 
         # Determine best margin

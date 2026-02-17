@@ -39,6 +39,14 @@ def render_drug_detail_page() -> None:
     if drug is None:
         return
 
+    # Off-Contract alert
+    if drug.off_contract:
+        st.warning(
+            "**Off-Contract Drug:** The 340B Purchase Price shown is the current "
+            "catalog unit price, not a contracted 340B price. Margins may not "
+            "reflect actual 340B savings."
+        )
+
     # Main content
     _render_drug_header(drug)
 
@@ -312,6 +320,10 @@ def _row_to_drug(row: dict[str, object]) -> Drug:
     drug_category = classify_drug_category(str(drug_name))
     is_brand = drug_category != DrugCategory.GENERIC
 
+    # Detect Off-Contract drugs
+    contract_name = str(row.get("Contract Name", "")).strip()
+    off_contract = contract_name == "Off-Contract"
+
     return Drug(
         ndc=ndc,
         drug_name=str(drug_name),
@@ -324,6 +336,7 @@ def _row_to_drug(row: dict[str, object]) -> Drug:
         is_brand=is_brand,
         ira_flag=bool(ira_status.get("is_ira_drug", False)),
         penny_pricing_flag=bool(nadac_info.get("is_penny_priced", False)),
+        off_contract=off_contract,
         nadac_price=nadac_price,
     )
 
@@ -392,7 +405,7 @@ def _render_drug_header(drug: Drug) -> None:
         )
         st.caption(f"AWP Rate: {'85%' if drug.is_brand else '20%'}")
 
-        st.metric("Contract Cost", f"${drug.contract_cost:,.2f}")
+        st.metric("340B Purchase Price", f"${drug.contract_cost:,.2f}")
         st.metric("AWP", f"${drug.awp:,.2f}")
 
     # Comprehensive Price Reference Section
@@ -406,10 +419,13 @@ def _render_drug_header(drug: Drug) -> None:
     price_col1, price_col2, price_col3, price_col4, price_col5 = st.columns(5)
 
     with price_col1:
-        st.markdown("**Acquisition Cost**")
+        st.markdown("**340B Purchase Price**")
         st.markdown(f"**${drug.contract_cost:,.2f}**")
         st.caption("Unit Price (Current Catalog)")
-        st.caption("340B acquisition cost")
+        if drug.off_contract:
+            st.caption("**OFF-CONTRACT**")
+        else:
+            st.caption("340B acquisition cost")
 
     with price_col2:
         st.markdown("**AWP**")
@@ -452,6 +468,39 @@ def _render_drug_header(drug: Drug) -> None:
             st.markdown("N/A")
             st.caption("No HCPCS mapping")
 
+    # Package ASP and Medical Spread (when medical path available)
+    if drug.has_medical_path() and drug.asp is not None:
+        st.markdown("---")
+        st.markdown("### Medical Reimbursement Summary")
+
+        package_asp = drug.asp * Decimal("1.06") * drug.bill_units_per_package
+        medical_spread = package_asp - drug.contract_cost
+
+        med_col1, med_col2, med_col3 = st.columns(3)
+
+        with med_col1:
+            st.markdown("**Package ASP (Medicare)**")
+            st.markdown(f"**${package_asp:,.2f}**")
+            st.caption(
+                f"Payment Limit (${drug.asp * Decimal('1.06'):,.2f}) "
+                f"x {drug.bill_units_per_package} bill units"
+            )
+
+        with med_col2:
+            st.markdown("**340B Purchase Price**")
+            st.markdown(f"**${drug.contract_cost:,.2f}**")
+            st.caption("Column O - Unit Price (Current Catalog)")
+
+        with med_col3:
+            spread_color = "green" if medical_spread > 0 else "red"
+            st.markdown("**Medical Spread**")
+            st.markdown(
+                f"<span style='color: {spread_color}; font-size: 1.2em; font-weight: bold;'>"
+                f"${medical_spread:,.2f}</span>",
+                unsafe_allow_html=True,
+            )
+            st.caption("Package ASP - 340B Purchase Price")
+
 
 def _render_5_margin_cards(
     drug: Drug,
@@ -487,7 +536,7 @@ def _render_5_margin_cards(
         _render_margin_card_single(
             title="Pharmacy - Medicaid",
             margin=analysis.pharmacy_medicaid_margin,
-            formula="(NADAC + Dispense Fee) x (1 + Markup%) x Capture Rate - Contract Cost",
+            formula="(NADAC + Dispense Fee) x (1 + Markup%) x Capture Rate - 340B Purchase Price",
             is_best=is_best,
             na_reason="No NADAC price available" if drug.nadac_price is None else None,
         )
@@ -498,7 +547,7 @@ def _render_5_margin_cards(
         _render_margin_card_single(
             title="Pharmacy - Medicare/Commercial",
             margin=analysis.pharmacy_medicare_commercial_margin,
-            formula=f"AWP x {awp_rate} ({'Brand' if drug.is_brand else 'Generic'}) x Capture Rate - Contract Cost",
+            formula=f"AWP x {awp_rate} ({'Brand' if drug.is_brand else 'Generic'}) x Capture Rate - 340B Purchase Price",
             is_best=is_best,
         )
 
@@ -511,7 +560,7 @@ def _render_5_margin_cards(
         _render_margin_card_single(
             title="Medical - Medicaid",
             margin=analysis.medical_medicaid_margin,
-            formula="ASP x 1.04 x Bill Units - Contract Cost",
+            formula="ASP x 1.04 x Bill Units - 340B Purchase Price",
             is_best=is_best,
             na_reason="No ASP/HCPCS mapping" if not drug.has_medical_path() else None,
         )
@@ -521,7 +570,7 @@ def _render_5_margin_cards(
         _render_margin_card_single(
             title="Medical - Medicare",
             margin=analysis.medical_medicare_margin,
-            formula="ASP x 1.06 x Bill Units - Contract Cost",
+            formula="ASP x 1.06 x Bill Units - 340B Purchase Price",
             is_best=is_best,
             na_reason="No ASP/HCPCS mapping" if not drug.has_medical_path() else None,
         )
@@ -531,7 +580,7 @@ def _render_5_margin_cards(
         _render_margin_card_single(
             title="Medical - Commercial",
             margin=analysis.medical_commercial_margin,
-            formula="ASP x (1 + Markup%) x Bill Units - Contract Cost",
+            formula="ASP x (1 + Markup%) x Bill Units - 340B Purchase Price",
             is_best=is_best,
             na_reason="No ASP/HCPCS mapping" if not drug.has_medical_path() else None,
         )
@@ -770,14 +819,14 @@ def _render_provenance_chain(
             revenue = base * (Decimal("1") + medicaid_markup_pct)
             margin = (revenue * capture_rate) - drug.contract_cost
             st.markdown(f"""
-            **Formula:** (NADAC + Dispense Fee) x (1 + Markup%) x Capture Rate - Contract Cost
+            **Formula:** (NADAC + Dispense Fee) x (1 + Markup%) x Capture Rate - 340B Purchase Price
 
             **Inputs:**
             - NADAC: ${drug.nadac_price:,.2f}
             - Dispense Fee: ${dispense_fee:,.2f}
             - Markup: {medicaid_markup_pct:.0%}
             - Capture Rate: {capture_rate:.0%}
-            - Contract Cost: ${drug.contract_cost:,.2f}
+            - 340B Purchase Price: ${drug.contract_cost:,.2f}
 
             **Calculation:**
             1. Base = ${drug.nadac_price:,.2f} + ${dispense_fee:,.2f} = ${base:,.2f}
@@ -797,13 +846,13 @@ def _render_provenance_chain(
         revenue = drug.awp * awp_factor
         margin = (revenue * capture_rate) - drug.contract_cost
         st.markdown(f"""
-        **Formula:** AWP x {factor_label} x Capture Rate - Contract Cost
+        **Formula:** AWP x {factor_label} x Capture Rate - 340B Purchase Price
 
         **Inputs:**
         - AWP: ${drug.awp:,.2f}
         - AWP Factor: {factor_label}
         - Capture Rate: {capture_rate:.0%}
-        - Contract Cost: ${drug.contract_cost:,.2f}
+        - 340B Purchase Price: ${drug.contract_cost:,.2f}
 
         **Calculation:**
         1. Revenue = ${drug.awp:,.2f} x {awp_factor} = ${revenue:,.2f}
@@ -819,13 +868,13 @@ def _render_provenance_chain(
             revenue = drug.asp * Decimal("1.04") * drug.bill_units_per_package
             margin = revenue - drug.contract_cost
             st.markdown(f"""
-            **Formula:** ASP x 1.04 x Bill Units - Contract Cost
+            **Formula:** ASP x 1.04 x Bill Units - 340B Purchase Price
 
             **Inputs:**
             - ASP: ${drug.asp:,.2f}
             - Multiplier: 1.04 (ASP + 4%)
             - Bill Units per Package: {drug.bill_units_per_package}
-            - Contract Cost: ${drug.contract_cost:,.2f}
+            - 340B Purchase Price: ${drug.contract_cost:,.2f}
 
             **Calculation:**
             1. Revenue = ${drug.asp:,.2f} x 1.04 x {drug.bill_units_per_package} = ${revenue:,.2f}
@@ -842,13 +891,13 @@ def _render_provenance_chain(
             revenue = drug.asp * Decimal("1.06") * drug.bill_units_per_package
             margin = revenue - drug.contract_cost
             st.markdown(f"""
-            **Formula:** ASP x 1.06 x Bill Units - Contract Cost
+            **Formula:** ASP x 1.06 x Bill Units - 340B Purchase Price
 
             **Inputs:**
             - ASP: ${drug.asp:,.2f}
             - Multiplier: 1.06 (ASP + 6%)
             - Bill Units per Package: {drug.bill_units_per_package}
-            - Contract Cost: ${drug.contract_cost:,.2f}
+            - 340B Purchase Price: ${drug.contract_cost:,.2f}
 
             **Calculation:**
             1. Revenue = ${drug.asp:,.2f} x 1.06 x {drug.bill_units_per_package} = ${revenue:,.2f}
@@ -866,13 +915,13 @@ def _render_provenance_chain(
             revenue = drug.asp * multiplier * drug.bill_units_per_package
             margin = revenue - drug.contract_cost
             st.markdown(f"""
-            **Formula:** ASP x (1 + Markup%) x Bill Units - Contract Cost
+            **Formula:** ASP x (1 + Markup%) x Bill Units - 340B Purchase Price
 
             **Inputs:**
             - ASP: ${drug.asp:,.2f}
             - Markup: {commercial_asp_pct:.0%} (Multiplier: {multiplier})
             - Bill Units per Package: {drug.bill_units_per_package}
-            - Contract Cost: ${drug.contract_cost:,.2f}
+            - 340B Purchase Price: ${drug.contract_cost:,.2f}
 
             **Calculation:**
             1. Revenue = ${drug.asp:,.2f} x {multiplier} x {drug.bill_units_per_package} = ${revenue:,.2f}

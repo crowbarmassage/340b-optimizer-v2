@@ -29,7 +29,7 @@ class Drug:
         ndc: National Drug Code (various formats accepted, normalized internally).
         drug_name: Trade/brand name of the drug.
         manufacturer: Drug manufacturer name.
-        contract_cost: 340B acquisition cost per package.
+        contract_cost: 340B Purchase Price (Unit Price Current Catalog, Column O).
         awp: Average Wholesale Price per package.
         asp: Average Sales Price per billing unit (None if no HCPCS mapping).
         hcpcs_code: Medicare billing code (None for retail-only drugs).
@@ -54,6 +54,7 @@ class Drug:
     is_brand: bool = True  # True=Brand (85% AWP), False=Generic (20% AWP)
     ira_flag: bool = False
     penny_pricing_flag: bool = False
+    off_contract: bool = False
     nadac_price: Decimal | None = None
 
     def has_medical_path(self) -> bool:

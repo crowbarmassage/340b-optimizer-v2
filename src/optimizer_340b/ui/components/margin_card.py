@@ -64,10 +64,10 @@ def _render_retail_margin(analysis: MarginAnalysis) -> None:
     # Provenance
     with st.expander("Calculation Details"):
         st.markdown(f"""
-        **Formula:** AWP x 85% x Capture Rate - Contract Cost
+        **Formula:** AWP x 85% x Capture Rate - 340B Purchase Price
 
         - AWP: ${analysis.drug.awp:,.2f}
-        - Contract Cost: ${analysis.drug.contract_cost:,.2f}
+        - 340B Purchase Price: ${analysis.drug.contract_cost:,.2f}
         - Capture Rate: {analysis.retail_capture_rate:.0%}
         - Gross Margin: ${analysis.retail_gross_margin:,.2f}
         - Net Margin: ${analysis.retail_net_margin:,.2f}
@@ -100,11 +100,11 @@ def _render_medicare_margin(analysis: MarginAnalysis) -> None:
         # Provenance
         with st.expander("Calculation Details"):
             st.markdown(f"""
-            **Formula:** ASP x 1.06 x Bill Units - Contract Cost
+            **Formula:** ASP x 1.06 x Bill Units - 340B Purchase Price
 
             - ASP: ${analysis.drug.asp:,.2f}
             - Bill Units: {analysis.drug.bill_units_per_package}
-            - Contract Cost: ${analysis.drug.contract_cost:,.2f}
+            - 340B Purchase Price: ${analysis.drug.contract_cost:,.2f}
             - Margin: ${analysis.medicare_margin:,.2f}
             """)
     else:
@@ -138,11 +138,11 @@ def _render_commercial_margin(analysis: MarginAnalysis) -> None:
         # Provenance
         with st.expander("Calculation Details"):
             st.markdown(f"""
-            **Formula:** ASP x 1.15 x Bill Units - Contract Cost
+            **Formula:** ASP x 1.15 x Bill Units - 340B Purchase Price
 
             - ASP: ${analysis.drug.asp:,.2f}
             - Bill Units: {analysis.drug.bill_units_per_package}
-            - Contract Cost: ${analysis.drug.contract_cost:,.2f}
+            - 340B Purchase Price: ${analysis.drug.contract_cost:,.2f}
             - Margin: ${analysis.commercial_margin:,.2f}
             """)
     else:

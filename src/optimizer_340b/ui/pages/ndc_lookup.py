@@ -472,7 +472,7 @@ def _process_ndc_lookup(
             "Match Status": match_status,
             "Catalog Description": catalog_name,
             "Type": drug_type,
-            "Contract Cost": _format_currency(contract_cost),
+            "340B Purchase Price": _format_currency(contract_cost),
             "AWP": _format_currency(awp),
             "Pharmacy Medicaid Margin": medicaid_display,
             "Pharmacy Medicare/Commercial Margin": _format_currency(
@@ -515,7 +515,7 @@ def _build_catalog_lookup(catalog: pl.DataFrame) -> dict[str, dict]:
     ndc_col = _find_column(catalog.columns, "NDC", "NDC11", "NDC Code")
     name_col = _find_column(catalog.columns, "Product Description", "Description", "Drug Name")
     generic_col = _find_column(catalog.columns, "Generic Name", "GenericName", "Generic")
-    cost_col = _find_column(catalog.columns, "Contract Cost", "ContractCost", "Cost")
+    cost_col = _find_column(catalog.columns, "Unit Price (Current Catalog)", "Contract Cost", "ContractCost", "Cost")
     awp_col = _find_column(catalog.columns, "Medispan AWP", "AWP", "MedispanAWP", "Medispan_AWP")
     pkg_size_col = _find_column(catalog.columns, "Package Size", "PackageSize", "Pkg Size", "Size")
 
@@ -656,10 +656,10 @@ def _calculate_pharmacy_margins(
 ) -> tuple[Decimal | None, Decimal | None]:
     """Calculate pharmacy channel margins.
 
-    Pharmacy Medicaid: ((NADAC x Pkg Size) + Dispense Fee) x (1 + Markup%) x Capture Rate - Contract Cost
-    Pharmacy Medicare/Commercial: AWP x (1 - Discount%) x Capture Rate - Contract Cost
+    Pharmacy Medicaid: ((NADAC x Pkg Size) + Dispense Fee) x (1 + Markup%) x Capture Rate - 340B Purchase Price
+    Pharmacy Medicare/Commercial: AWP x (1 - Discount%) x Capture Rate - 340B Purchase Price
 
-    Note: NADAC is per-unit price, Contract Cost is per-package.
+    Note: NADAC is per-unit price, 340B Purchase Price is per-package.
     We multiply NADAC by package_size to get per-package NADAC.
 
     Args:
@@ -676,7 +676,7 @@ def _calculate_pharmacy_margins(
     Returns:
         Tuple of (medicaid_margin, medicare_commercial_margin).
     """
-    # Pharmacy Medicaid: ((NADAC x Pkg Size) + Dispense Fee) x (1 + Markup%) x Capture Rate - Contract Cost
+    # Pharmacy Medicaid: ((NADAC x Pkg Size) + Dispense Fee) x (1 + Markup%) x Capture Rate - 340B Purchase Price
     if contract_cost is not None and nadac_price is not None:
         nadac_per_package = nadac_price * package_size
         base = nadac_per_package + dispense_fee
@@ -685,7 +685,7 @@ def _calculate_pharmacy_margins(
     else:
         medicaid_margin = None
 
-    # Pharmacy Medicare/Commercial: AWP x (1 - Discount%) x Capture Rate - Contract Cost
+    # Pharmacy Medicare/Commercial: AWP x (1 - Discount%) x Capture Rate - 340B Purchase Price
     if contract_cost is not None and awp is not None:
         # Apply AWP discount (e.g., 15% discount = multiply by 0.85)
         awp_multiplier = Decimal("1") - awp_discount
