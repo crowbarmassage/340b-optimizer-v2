@@ -1,0 +1,12 @@
+October 2025 ASP NOC NDC - HCPCS Crosswalk for Medicare Part B Drugs,,,,,,,,
+"October 1, 2025 through December 31, 2025",,,,,,,,
+,,,,,,,,
+The ASP crosswalks are maintained by the Division of Data Analysis and Market Based Pricing to support ASP-based Medicare Part B payments only. The crosswalks are intended to help the public (including entities that submit manufacturer ASP data and providers who bill for drugs) understand which drug products (identified by NDCs) are assigned to which HCPCS billing codes. The crosswalks are not intended to be a comprehensive list of all drugs/NDCs available in the United States. The NDC to HCPCS Crosswalk also includes information on the NDC package size and the number of billable units (as defined by the HCPCS code descriptor). Comments on the file may be sent to sec303aspdata@cms.hhs.gov.,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+Drug Generic Name,LABELER NAME,NDC or ALTERNATE ID,Drug Name,Dosage,PKG SIZE,PKG QTY,BILLUNITS,BILLUNITSPKG
+Vasopressin (Long Grove),"Long Grove Pharmaceuticals, LLC",81298-8552-03,Vasopressin,1 UNIT,100,10,20,200
+Vasopressin (Long Grove),"Long Grove Pharmaceuticals, LLC",81298-8554-03,Vasopressin,1 UNIT,100,10,40,400

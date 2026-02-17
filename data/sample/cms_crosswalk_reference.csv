@@ -1,0 +1,18 @@
+"Effective January 1, 2005, Medicare will base payment for a Part B drug on 106% of the Average Sales Price (ASP) of the drug as reported quarterly to the Centers for Medicare and Medicaid Services (CMS) by manufacturers.  Manufacturers submit ASP data at the 11-digit National Drug Code (NDC) level.  Providers mostly use Healthcare Common Procedure Coding System (HCPCS) codes to bill Medicare for drugs and biologicals."
+
+The ASP crosswalks are maintained by the Division of Data Analysis and Market Based Pricing to support ASP-based Medicare Part B payments only. The crosswalks are intended to help the public (including entities that submit manufacturer ASP data and providers who bill for drugs) understand which drug products (identified by NDCs) are assigned to which HCPCS billing codes. The crosswalks are not intended to be a comprehensive list of all drugs/NDCs available in the United States. The NDC to HCPCS Crosswalk also includes information on the NDC package size and the number of billable units (as defined by the HCPCS code descriptor).  Comments on the file may be sent to sec303aspdata@cms.hhs.gov.
+
+Field Descriptions/Example:
+HCPCS Code:  Jxxxx 
+Short Descriptor:  Short descriptor of the HCPCS code
+"Code Dosage Descriptor:  The dosage descriptor assigned to the HCPCS code (ex., 5 mcg.)"
+Labeler Name:  Manufacturer Name
+11-Digit National Drug Code (NDC) or Alternate ID:  typically xxxxx-xxxx-xx (dashes are included); alternate IDs vary in formatting
+Drug Name:  ProductName (brand or generic name may appear)
+"Package Size: amount in one item.  (ex.,  For a product that is 100mcg/0.5 ml in one vial, the package size would be 0.5.)  "
+"Package Quantity:  number of items in the NDC (ex., For an NDC that is 4 vials in a shelf pack, the package quantity would be 4.)"
+"Billable Units Per Package: the number of billable units per package (ex., 100 mcg in a package divided by 5 mcg in the dosage descriptor = 20 billable units per package.)"
+"Billable Units Per 11-Digit NDC:  the number of billable units per NDC (ex., 20 billable units in each item multiplied by 4 vials in the NDC shelf pack (aka the package quantity) = 80 billable units per NDC.)"
+
+
+"Influenza, pneumococcal and hepatitis B vaccines and blood products (except immune globulin) are paid based on 95% of the average wholesale price (AWP) published in drug pricing compendia."
