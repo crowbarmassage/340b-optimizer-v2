@@ -24,6 +24,7 @@ from optimizer_340b.ingest.validators import (
     validate_catalog_schema,
 )
 from optimizer_340b.risk.ira_flags import reload_ira_drugs
+from optimizer_340b.risk.manufacturer_cp import reload_cp_restrictions
 
 # Sample data directory
 SAMPLE_DATA_DIR = Path(__file__).parent.parent.parent.parent.parent / "data" / "sample"
@@ -137,6 +138,17 @@ def _load_sample_data() -> None:
         st.session_state.uploaded_data["ira_drugs"] = df
         reload_ira_drugs(df=df)
         logger.info(f"Loaded IRA drug list: {df.height} drugs")
+
+    # Load Manufacturer CP Restrictions
+    cp_path = SAMPLE_DATA_DIR / "Mfr_CP_Restrictions_Lookup_FQHC.xlsx"
+    if cp_path.exists():
+        try:
+            df = load_excel_to_polars(str(cp_path), sheet_name="Mfr CP Restrictions")
+            st.session_state.uploaded_data["cp_restrictions"] = df
+            reload_cp_restrictions(df=df)
+            logger.info(f"Loaded CP restrictions: {df.height} manufacturers")
+        except Exception as e:
+            logger.warning(f"Could not load CP restrictions: {e}")
 
 
 def _process_uploaded_data() -> None:
@@ -258,6 +270,7 @@ def _render_data_status() -> None:
         ("ravenswood_categories", "AWP Matrix"),
         ("wholesaler_catalog", "Wholesaler Catalog"),
         ("ira_drugs", "IRA Drug List"),
+        ("cp_restrictions", "CP Restrictions"),
     ]
 
     col1, col2 = st.columns(2)

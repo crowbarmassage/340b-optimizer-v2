@@ -4,6 +4,7 @@ Provides risk detection for 340B drug pricing decisions:
 - IRA (Inflation Reduction Act) price negotiation detection
 - Penny pricing alerts for NADAC floor drugs
 - Retail price validation against wholesaler catalog
+- Manufacturer contract pharmacy (CP) restriction detection
 """
 
 from optimizer_340b.risk.ira_flags import (
@@ -15,6 +16,12 @@ from optimizer_340b.risk.ira_flags import (
     filter_ira_drugs,
     get_all_ira_drugs,
     get_ira_risk_status,
+)
+from optimizer_340b.risk.manufacturer_cp import (
+    CP_RESTRICTIONS,
+    CPRestrictionInfo,
+    check_cp_restriction,
+    reload_cp_restrictions,
 )
 from optimizer_340b.risk.penny_pricing import (
     HIGH_DISCOUNT_THRESHOLD,
@@ -36,6 +43,11 @@ __all__ = [
     "filter_ira_drugs",
     "get_all_ira_drugs",
     "get_ira_risk_status",
+    # Manufacturer CP restrictions
+    "CP_RESTRICTIONS",
+    "CPRestrictionInfo",
+    "check_cp_restriction",
+    "reload_cp_restrictions",
     # Penny pricing
     "HIGH_DISCOUNT_THRESHOLD",
     "PENNY_THRESHOLD",

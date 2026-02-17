@@ -15,6 +15,7 @@ from optimizer_340b.compute.margins import (
 from optimizer_340b.ingest.normalizers import normalize_ndc
 from optimizer_340b.models import Drug, MarginAnalysis
 from optimizer_340b.risk import check_ira_status
+from optimizer_340b.risk.manufacturer_cp import check_cp_restriction
 from optimizer_340b.ui.components.drug_search import render_drug_search
 from optimizer_340b.ui.components.risk_badge import render_risk_badges
 
@@ -53,6 +54,9 @@ def render_drug_detail_page() -> None:
     # Risk warnings at top
     st.markdown("### Risk Assessment")
     render_risk_badges(drug)
+
+    # Manufacturer Risk Assessment (directly below Risk Assessment)
+    _render_manufacturer_risk_assessment(drug)
 
     st.markdown("---")
 
@@ -958,3 +962,112 @@ def _render_provenance_chain(
 
             **Recommended:** {best_name} with margin of **${best_margin:,.2f}**
             """)
+
+
+def _render_manufacturer_risk_assessment(drug: Drug) -> None:
+    """Render Manufacturer Risk Assessment section.
+
+    Displays CP restriction alerts, compliance requirements,
+    and strategic notes based on manufacturer restriction data.
+    """
+    cp_info = check_cp_restriction(drug.manufacturer)
+
+    if cp_info is None:
+        return
+
+    st.markdown("### Manufacturer Risk Assessment")
+
+    risk_level = cp_info.risk_level
+
+    # --- CP Value Coefficient with color-coded display ---
+    coeff = cp_info.cp_value_coefficient
+    if coeff >= 1.0:
+        coeff_color = "#28a745"  # green
+        coeff_label = "No Restrictions"
+    elif coeff >= 0.85:
+        coeff_color = "#28a745"  # green
+        coeff_label = "Full Restoration Available"
+    elif coeff >= 0.70:
+        coeff_color = "#ffa726"  # orange
+        coeff_label = "Partial Restoration"
+    elif coeff >= 0.50:
+        coeff_color = "#ffa726"  # orange
+        coeff_label = "Limited Restoration"
+    else:
+        coeff_color = "#ff4b4b"  # red
+        coeff_label = "No CP Value"
+
+    # Header row with manufacturer, risk level, and coefficient
+    h_col1, h_col2, h_col3 = st.columns(3)
+    with h_col1:
+        st.markdown(f"**Manufacturer:** {cp_info.manufacturer}")
+        if cp_info.products_notes:
+            st.caption(f"Products: {cp_info.products_notes}")
+    with h_col2:
+        risk_colors = {"High": "#ff4b4b", "Medium": "#ffa726", "Low": "#28a745", "None": "#28a745"}
+        r_color = risk_colors.get(risk_level, "#666")
+        st.markdown(
+            f"**Risk Level:** <span style='background-color: {r_color}; color: white; "
+            f"padding: 2px 8px; border-radius: 4px; font-weight: bold;'>"
+            f"{risk_level}</span>",
+            unsafe_allow_html=True,
+        )
+    with h_col3:
+        st.markdown(
+            f"**CP Value Coefficient:** <span style='color: {coeff_color}; "
+            f"font-weight: bold; font-size: 1.2em;'>{coeff:.2f}</span> "
+            f"({coeff_label})",
+            unsafe_allow_html=True,
+        )
+
+    # --- Dynamic Alerts ---
+
+    # 1. Rebate Eligibility Alert
+    if cp_info.has_single_cp_restriction:
+        st.error(
+            f"**Rebate restricted to one designated pharmacy.** "
+            f"Restriction type: {cp_info.restriction_type}"
+        )
+
+    # 2. Administrative Burden Flag
+    if cp_info.requires_data_submission:
+        st.warning(
+            f"**Manual reporting to independent aggregator (e.g., 340B ESP) "
+            f"required for rebate clearance.** "
+            f"Method: {cp_info.pricing_restoration_method}"
+        )
+
+    # 3. Legislative Impact Tag (reinforce IRA if applicable)
+    if drug.ira_flag:
+        st.warning(
+            "**IRA Impact:** This drug is subject to Inflation Reduction Act "
+            "price negotiation, which may further affect 340B pricing."
+        )
+
+    # --- Detail columns ---
+    detail_col1, detail_col2 = st.columns(2)
+
+    with detail_col1:
+        st.markdown("**Restriction Details**")
+        st.markdown(f"- **Type:** {cp_info.restriction_type}")
+        st.markdown(f"- **EO Rx Limit:** {cp_info.eo_rx_limit}")
+        if cp_info.mile_limit and cp_info.mile_limit != "-":
+            st.markdown(f"- **Mile Limit:** {cp_info.mile_limit}")
+        st.markdown(f"- **FQHC Applies:** {'Yes' if cp_info.fqhc_applies else 'No'}")
+
+    with detail_col2:
+        st.markdown("**Compliance & Exemptions**")
+        if cp_info.pricing_restoration_method and cp_info.pricing_restoration_method != "nan":
+            st.markdown(f"- **Restoration:** {cp_info.pricing_restoration_method}")
+        if cp_info.states_exempt and cp_info.states_exempt not in ("-", "nan"):
+            st.markdown(f"- **States Exempt:** {cp_info.states_exempt}")
+        if cp_info.operational_notes and cp_info.operational_notes != "nan":
+            st.markdown(f"- **Notes:** {cp_info.operational_notes}")
+
+    # --- Strategic Recommendation ---
+    if risk_level == "High":
+        st.info(
+            "**Strategic Note:** This drug has significant manufacturer restrictions. "
+            "Consider alternative drugs with lower-risk administrative paths for "
+            "contract pharmacy dispensing."
+        )
